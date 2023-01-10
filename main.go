@@ -70,12 +70,13 @@ func main() {
 			if err != nil {
 				log.Fatal("Error when parsing url", err)
 			}
-			tld, err := publicsuffix.EffectiveTLDPlusOne(u.Host)
+			tldPlusOne, err := publicsuffix.EffectiveTLDPlusOne(u.Host)
 			if err != nil {
-				log.Fatal("Error when extracting tld from url", err)
+				log.Println("Error when extracting domain from url", err)
+				tldPlusOne = u.Host
 			}
 
-			url := fmt.Sprintf("%v://*.%v/*", u.Scheme, tld)
+			url := fmt.Sprintf("%v://*.%v/*", u.Scheme, tldPlusOne)
 
 			content := ""
 			content += fmt.Sprintf("%v\n", record[cols["password"]])
