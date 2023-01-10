@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/url"
 	"os"
 	"os/exec"
+
+	"golang.org/x/net/publicsuffix"
 )
 
 func main() {
@@ -63,9 +66,20 @@ func main() {
 		} else {
 			log.Println("Inserting password:", path)
 
+			u, err := url.Parse(record[cols["url"]])
+			if err != nil {
+				log.Fatal("Error when parsing url", err)
+			}
+			tld, err := publicsuffix.EffectiveTLDPlusOne(u.Host)
+			if err != nil {
+				log.Fatal("Error when extracting tld from url", err)
+			}
+
+			url := fmt.Sprintf("%v://*.%v/*", u.Scheme, tld)
+
 			content := ""
 			content += fmt.Sprintf("%v\n", record[cols["password"]])
-			content += fmt.Sprintf("URL: %v\n", record[cols["url"]])
+			content += fmt.Sprintf("URL: %v\n", url)
 			content += fmt.Sprintf("Username: %v\n", record[cols["username"]])
 			content += fmt.Sprintf("Extra:\n%v\n", record[cols["extra"]])
 
