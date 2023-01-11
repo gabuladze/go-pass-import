@@ -12,6 +12,23 @@ import (
 	"golang.org/x/net/publicsuffix"
 )
 
+func getTldPlusOne(fullUrl string) string {
+	result := "*"
+
+	u, err := url.Parse(fullUrl)
+	if err != nil {
+		return result
+	}
+
+	tldPlusOne, err := publicsuffix.EffectiveTLDPlusOne(u.Host)
+	if err != nil {
+		return result
+	}
+
+	result = fmt.Sprintf("%v://*.%v/*", u.Scheme, tldPlusOne)
+	return result
+}
+
 func main() {
 	cols := map[string]int{
 		"url":      0,
@@ -66,18 +83,7 @@ func main() {
 		} else {
 			log.Println("Inserting password:", path)
 
-			u, err := url.Parse(record[cols["url"]])
-			if err != nil {
-				log.Fatal("Error when parsing url", err)
-			}
-			tldPlusOne, err := publicsuffix.EffectiveTLDPlusOne(u.Host)
-			if err != nil {
-				log.Println("Error when extracting domain from url", err)
-				tldPlusOne = u.Host
-			}
-
-			url := fmt.Sprintf("%v://*.%v/*", u.Scheme, tldPlusOne)
-
+			url := getTldPlusOne(record[cols["url"]])
 			content := ""
 			content += fmt.Sprintf("%v\n", record[cols["password"]])
 			content += fmt.Sprintf("URL: %v\n", url)
