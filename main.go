@@ -41,7 +41,7 @@ func main() {
 		"fav":      7,
 	}
 
-	filePath := "./in.csv"
+	filePath := os.Args[1]
 	f, err := os.Open(filePath)
 	if err != nil {
 		log.Fatal(err)
