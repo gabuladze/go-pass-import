@@ -30,16 +30,16 @@ func getTldPlusOne(fullUrl string) string {
 }
 
 func main() {
-	cols := map[string]int{
-		"url":      0,
-		"username": 1,
-		"password": 2,
-		"totp":     3,
-		"extra":    4,
-		"name":     5,
-		"grouping": 6,
-		"fav":      7,
-	}
+	const (
+		URL int = iota
+		USERNAME
+		PASSWORD
+		TOTP
+		EXTRA
+		NAME
+		GROUPING
+		FAV
+	)
 
 	filePath := os.Args[1]
 	f, err := os.Open(filePath)
@@ -59,12 +59,12 @@ func main() {
 			log.Fatal(err)
 		}
 
-		if record[cols["fav"]] == "fav" {
+		if record[FAV] == "fav" {
 			// skip header
 			continue
 		}
 
-		path := fmt.Sprintf("%v/%v", record[cols["grouping"]], record[cols["name"]])
+		path := fmt.Sprintf("%v/%v", record[GROUPING], record[NAME])
 
 		cmd := exec.Command("pass", "insert", "-m", path)
 		stdin, err := cmd.StdinPipe()
@@ -76,19 +76,19 @@ func main() {
 			log.Fatal("An error occured: ", err)
 		}
 
-		if record[cols["url"]] == "http://sn" {
+		if record[URL] == "http://sn" {
 			log.Println("Inserting secure note:", path)
 
-			io.WriteString(stdin, record[cols["extra"]])
+			io.WriteString(stdin, record[EXTRA])
 		} else {
 			log.Println("Inserting password:", path)
 
-			url := getTldPlusOne(record[cols["url"]])
+			url := getTldPlusOne(record[URL])
 			content := ""
-			content += fmt.Sprintf("%v\n", record[cols["password"]])
+			content += fmt.Sprintf("%v\n", record[PASSWORD])
 			content += fmt.Sprintf("URL: %v\n", url)
-			content += fmt.Sprintf("Username: %v\n", record[cols["username"]])
-			content += fmt.Sprintf("Extra:\n%v\n", record[cols["extra"]])
+			content += fmt.Sprintf("Username: %v\n", record[USERNAME])
+			content += fmt.Sprintf("Extra:\n%v\n", record[EXTRA])
 
 			io.WriteString(stdin, content)
 		}
