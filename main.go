@@ -12,6 +12,17 @@ import (
 	"golang.org/x/net/publicsuffix"
 )
 
+const (
+	URL int = iota
+	USERNAME
+	PASSWORD
+	TOTP
+	EXTRA
+	NAME
+	GROUPING
+	FAV
+)
+
 func getTldPlusOne(fullUrl string) string {
 	result := "*"
 
@@ -29,17 +40,17 @@ func getTldPlusOne(fullUrl string) string {
 	return result
 }
 
+func formatPassword(row []string) string {
+	url := getTldPlusOne(row[URL])
+	content := ""
+	content += fmt.Sprintf("%v\n", row[PASSWORD])
+	content += fmt.Sprintf("URL: %v\n", url)
+	content += fmt.Sprintf("Username: %v\n", row[USERNAME])
+	content += fmt.Sprintf("Extra:\n%v\n", row[EXTRA])
+	return content
+}
+
 func main() {
-	const (
-		URL int = iota
-		USERNAME
-		PASSWORD
-		TOTP
-		EXTRA
-		NAME
-		GROUPING
-		FAV
-	)
 
 	filePath := os.Args[1]
 	f, err := os.Open(filePath)
@@ -51,7 +62,7 @@ func main() {
 	r := csv.NewReader(f)
 
 	for {
-		record, err := r.Read()
+		row, err := r.Read()
 		if err == io.EOF {
 			break
 		}
@@ -59,12 +70,12 @@ func main() {
 			log.Fatal(err)
 		}
 
-		if record[FAV] == "fav" {
+		if row[FAV] == "fav" {
 			// skip header
 			continue
 		}
 
-		path := fmt.Sprintf("%v/%v", record[GROUPING], record[NAME])
+		path := fmt.Sprintf("%v/%v", row[GROUPING], row[NAME])
 
 		cmd := exec.Command("pass", "insert", "-m", path)
 		stdin, err := cmd.StdinPipe()
@@ -76,21 +87,15 @@ func main() {
 			log.Fatal("An error occured: ", err)
 		}
 
-		if record[URL] == "http://sn" {
+		if row[URL] == "http://sn" {
 			log.Println("Inserting secure note:", path)
 
-			io.WriteString(stdin, record[EXTRA])
+			io.WriteString(stdin, row[EXTRA])
 		} else {
 			log.Println("Inserting password:", path)
+			formatedPassword := formatPassword(row)
 
-			url := getTldPlusOne(record[URL])
-			content := ""
-			content += fmt.Sprintf("%v\n", record[PASSWORD])
-			content += fmt.Sprintf("URL: %v\n", url)
-			content += fmt.Sprintf("Username: %v\n", record[USERNAME])
-			content += fmt.Sprintf("Extra:\n%v\n", record[EXTRA])
-
-			io.WriteString(stdin, content)
+			io.WriteString(stdin, formatedPassword)
 		}
 
 		stdin.Close()
